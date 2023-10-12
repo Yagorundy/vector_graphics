@@ -347,7 +347,7 @@ class _VectorGraphicWidgetState extends State<VectorGraphic> {
   }
 
   Future<_PictureData> _loadPicture(
-      BuildContext context, _PictureKey key, BytesLoader loader) {
+      BuildContext context, _PictureKey key, BytesLoader loader) async {
     try {
       if (_pendingPictures.containsKey(key)) {
         return _pendingPictures[key]!;
@@ -374,7 +374,7 @@ class _VectorGraphicWidgetState extends State<VectorGraphic> {
       result.whenComplete(() {
         _pendingPictures.remove(key);
       });
-      return result;
+      return await result;
     } catch (error, stackTrace) {
       _handleError(error, stackTrace);
       rethrow;
