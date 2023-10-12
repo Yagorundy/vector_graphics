@@ -348,32 +348,37 @@ class _VectorGraphicWidgetState extends State<VectorGraphic> {
 
   Future<_PictureData> _loadPicture(
       BuildContext context, _PictureKey key, BytesLoader loader) {
-    if (_pendingPictures.containsKey(key)) {
-      return _pendingPictures[key]!;
+    try {
+      if (_pendingPictures.containsKey(key)) {
+        return _pendingPictures[key]!;
+      }
+      final Future<_PictureData> result =
+          loader.loadBytes(context).then((ByteData data) {
+        return decodeVectorGraphics(
+          data,
+          locale: key.locale,
+          textDirection: key.textDirection,
+          clipViewbox: key.clipViewbox,
+          loader: loader,
+          onError: (Object error, StackTrace? stackTrace) {
+            return _handleError(
+              error,
+              stackTrace,
+            );
+          },
+        );
+      }).then((PictureInfo pictureInfo) {
+        return _PictureData(pictureInfo, 0, key);
+      });
+      _pendingPictures[key] = result;
+      result.whenComplete(() {
+        _pendingPictures.remove(key);
+      });
+      return result;
+    } catch (error, stackTrace) {
+      _handleError(error, stackTrace);
+      rethrow;
     }
-    final Future<_PictureData> result =
-        loader.loadBytes(context).then((ByteData data) {
-      return decodeVectorGraphics(
-        data,
-        locale: key.locale,
-        textDirection: key.textDirection,
-        clipViewbox: key.clipViewbox,
-        loader: loader,
-        onError: (Object error, StackTrace? stackTrace) {
-          return _handleError(
-            error,
-            stackTrace,
-          );
-        },
-      );
-    }).then((PictureInfo pictureInfo) {
-      return _PictureData(pictureInfo, 0, key);
-    });
-    _pendingPictures[key] = result;
-    result.whenComplete(() {
-      _pendingPictures.remove(key);
-    });
-    return result;
   }
 
   void _handleError(Object error, StackTrace? stackTrace) {
